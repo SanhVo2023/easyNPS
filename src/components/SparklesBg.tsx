@@ -15,7 +15,15 @@ interface Particle {
   duration: number;
 }
 
-export const SparklesBg: React.FC = () => {
+interface SparklesBgProps {
+  glowColor?: string;
+  nebulaColor?: string;
+}
+
+export const SparklesBg: React.FC<SparklesBgProps> = ({
+  glowColor = 'rgba(26, 115, 232, 0.9)',
+  nebulaColor = 'rgba(147, 52, 230, 0.8)'
+}) => {
   const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
@@ -32,18 +40,18 @@ export const SparklesBg: React.FC = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-[#050505]">
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
       {/* Premium Elegant Dark theme background gradients */}
       <div 
-        className="absolute w-[80vw] h-[80vw] md:w-[50vw] md:h-[50vw] rounded-full blur-[120px] opacity-20 -top-[10%] -right-[10%]"
+        className="absolute w-[80vw] h-[80vw] md:w-[50vw] md:h-[50vw] rounded-full blur-[120px] opacity-20 -top-[10%] -right-[10%] transition-colors duration-500"
         style={{
-          background: 'radial-gradient(circle, rgba(26, 115, 232, 0.9) 0%, rgba(26, 115, 232, 0) 70%)'
+          background: `radial-gradient(circle, ${glowColor} 0%, rgba(26, 115, 232, 0) 70%)`
         }}
       />
       <div 
-        className="absolute w-[90vw] h-[90vw] md:w-[60vw] md:h-[60vw] rounded-full blur-[140px] opacity-15 -bottom-[10%] -left-[10%]"
+        className="absolute w-[90vw] h-[90vw] md:w-[60vw] md:h-[60vw] rounded-full blur-[140px] opacity-15 -bottom-[10%] -left-[10%] transition-colors duration-500"
         style={{
-          background: 'radial-gradient(circle, rgba(147, 52, 230, 0.8) 0%, rgba(147, 52, 230, 0) 75%)'
+          background: `radial-gradient(circle, ${nebulaColor} 0%, rgba(147, 52, 230, 0) 75%)`
         }}
       />
 

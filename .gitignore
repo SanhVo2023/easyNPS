@@ -2,7 +2,42 @@ node_modules/
 build/
 dist/
 coverage/
+
+# OS-specific files
 .DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local environment variables and keys
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env*
 !.env.example
+
+# Sandbox & Project-specific credentials
+firebase-applet-config.json
+*secret*.json
+*credentials*.json
+*service-account*.json
+serviceAccountKey.json
+*.key
+*.pem
+
+# Editor configurations and private workspaces
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

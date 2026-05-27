@@ -11,11 +11,14 @@ import {
   Eye, 
   BarChart3, 
   Share2,
-  Info
+  Info,
+  Settings2
 } from 'lucide-react';
 import { SparklesBg } from './components/SparklesBg';
 import { FeedbackForm } from './components/FeedbackForm';
 import { CreatorDashboard } from './components/CreatorDashboard';
+import { FormBuilder } from './components/FormBuilder';
+import { THEMES, DEFAULT_FORM_CONFIG } from './lib/presets';
 import { 
   initAuth, 
   googleSignIn, 
@@ -27,15 +30,43 @@ import {
   appendFeedbackEntry, 
   fetchFeedbackEntries 
 } from './lib/sheets';
-import { FeedbackEntry, SpreadsheetConfig } from './types';
+import { FeedbackEntry, SpreadsheetConfig, FormConfig } from './types';
 
 export default function App() {
   const [user, setUser] = useState<any | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   
-  // App views: 'form' (Feedback Landing Page) or 'dashboard' (Database Admin Deck)
-  const [viewMode, setViewMode] = useState<'form' | 'dashboard'>('form');
+  // App views: 'form' (Public Feedback Landing Page), 'builder' (No-code Flow Studio), or 'dashboard' (Database Analytics Console)
+  const [viewMode, setViewMode] = useState<'form' | 'builder' | 'dashboard'>('form');
+
+  // Load custom Form parameters
+  const [formConfig, setFormConfig] = useState<FormConfig>(() => {
+    const saved = localStorage.getItem('gemini_feedback_form_config');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse form configuration:', e);
+      }
+    }
+    return DEFAULT_FORM_CONFIG;
+  });
+
+  const [activeThemeId, setActiveThemeId] = useState<string>(() => {
+    return localStorage.getItem('gemini_feedback_theme_id') || 'midnight-void';
+  });
+
+  const activeTheme = THEMES.find(t => t.id === activeThemeId) || THEMES[0];
+
+  // Save changes to localStorage on setFormConfig variations
+  useEffect(() => {
+    localStorage.setItem('gemini_feedback_form_config', JSON.stringify(formConfig));
+  }, [formConfig]);
+
+  useEffect(() => {
+    localStorage.setItem('gemini_feedback_theme_id', activeThemeId);
+  }, [activeThemeId]);
 
   // Spreadsheet Configuration & Synchronization states
   const [config, setConfig] = useState<SpreadsheetConfig | null>(null);
@@ -224,62 +255,73 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen text-gray-100 relative bg-[#050505] flex flex-col justify-between selection:bg-blue-500/25 selection:text-white">
+    <div className={`min-h-screen relative flex flex-col justify-between selection:bg-blue-500/25 selection:text-white transition-colors duration-500 ${activeTheme.backgroundClass}`}>
       
-      {/* Animated Glowing Nebula space background */}
-      <SparklesBg />
+      {/* Animated Glowing Nebula space background adjusted dynamically */}
+      <SparklesBg glowColor={activeTheme.glowColor} nebulaColor={activeTheme.nebulaColor} />
 
       {/* Primary Container */}
       <div className="flex-1 w-full flex flex-col relative z-10 px-4 md:px-0 mt-8 md:mt-12">
-        <header className="mb-8 text-center max-w-lg mx-auto space-y-4 shrink-0 px-2">
+        <header className="mb-6 text-center max-w-2xl mx-auto space-y-3.5 shrink-0 px-4">
           {/* Brand Pill */}
-          <div className="inline-flex items-center justify-center gap-1.5 p-1 px-3.5 rounded-full bg-zinc-900/40 border border-zinc-800/60 backdrop-blur-md">
+          <div className="inline-flex items-center justify-center gap-1.5 p-1 px-3.5 rounded-full bg-zinc-900/45 border border-zinc-800/80 backdrop-blur-md">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
             <span className="text-[10px] font-mono font-medium tracking-wide text-zinc-400">
-              Gemini Direct Sync Engine
+              {formConfig.brandName} Sync Engine
             </span>
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 leading-tight pb-0.5">
-            Give us your take.
+          <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white leading-tight pb-0.5">
+            {formConfig.headerTitle}
           </h1>
-          <p className="text-xs md:text-sm text-zinc-400 font-normal max-w-sm mx-auto">
-            Help us build the next generation of generative features. Your suggestions are securely recorded in real time.
+          <p className="text-xs md:text-sm text-zinc-400 font-normal max-w-xl mx-auto">
+            {formConfig.headerSubtitle}
           </p>
         </header>
 
-        {/* View Mode Swapper Toggle (Only available when logged in with Google) */}
-        {user && (
-          <div className="max-w-sm mx-auto w-full p-1 bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl mb-8 flex transition-all">
-            <button
-              onClick={() => setViewMode('form')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-all outline-none cursor-pointer ${
-                viewMode === 'form' 
-                  ? 'bg-zinc-800 text-white border border-zinc-700/60 shadow-lg' 
-                  : 'text-zinc-500 hover:text-zinc-350'
-              }`}
-            >
-              <Eye className="w-3.5 h-3.5" />
-              Public Form View
-            </button>
-            <button
-              onClick={() => setViewMode('dashboard')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-all outline-none cursor-pointer ${
-                viewMode === 'dashboard' 
-                  ? 'bg-zinc-800 text-white border border-zinc-700/60 shadow-lg' 
-                  : 'text-zinc-500 hover:text-zinc-350'
-              }`}
-            >
-              <BarChart3 className="w-3.5 h-3.5" />
-              Creator Console
-            </button>
-          </div>
-        )}
+        {/* View Mode Swapper Toggle (Available to all users to try out the workspace!) */}
+        <div className="max-w-md mx-auto w-full p-1 bg-zinc-950/60 backdrop-blur-xl border border-zinc-900 rounded-2xl mb-8 flex transition-all">
+          <button
+            onClick={() => setViewMode('form')}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all outline-none cursor-pointer ${
+              viewMode === 'form' 
+                ? 'bg-zinc-800 text-white shadow-lg border border-zinc-700/50' 
+                : 'text-zinc-500 hover:text-zinc-350'
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5 text-blue-400" />
+            Public View
+          </button>
+          
+          <button
+            onClick={() => setViewMode('builder')}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all outline-none cursor-pointer ${
+              viewMode === 'builder' 
+                ? 'bg-zinc-800 text-white shadow-lg border border-zinc-700/50' 
+                : 'text-zinc-500 hover:text-zinc-350'
+            }`}
+          >
+            <Settings2 className="w-3.5 h-3.5 text-purple-400" />
+            Flow Designer
+          </button>
+
+          <button
+            onClick={() => setViewMode('dashboard')}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all outline-none cursor-pointer ${
+              viewMode === 'dashboard' 
+                ? 'bg-zinc-800 text-white shadow-lg border border-zinc-700/50' 
+                : 'text-zinc-500 hover:text-zinc-350'
+            }`}
+          >
+            <BarChart3 className="w-3.5 h-3.5 text-emerald-400" />
+            Creator Console
+          </button>
+        </div>
 
         {/* Main Interface Router with Slide animations */}
-        <main className="flex-1 w-full max-w-5xl mx-auto flex flex-col justify-start">
+        <main className="flex-1 w-full max-w-6xl mx-auto flex flex-col justify-start px-2 md:px-4">
           <AnimatePresence mode="wait">
-            {viewMode === 'form' ? (
+            {viewMode === 'form' && (
               <motion.div
                 key="feedback-view"
                 initial={{ opacity: 0, y: 15 }}
@@ -294,6 +336,8 @@ export default function App() {
                   onSubmit={handleFeedbackSubmit}
                   isSubmitting={isSubmitting}
                   spreadsheetUrl={config?.spreadsheetUrl || null}
+                  formConfig={formConfig}
+                  theme={activeTheme}
                 />
 
                 {/* Switch to login prompt for app owners/creators */}
@@ -301,15 +345,65 @@ export default function App() {
                   <div className="mt-8 flex flex-col items-center gap-1.5 text-center">
                     <button
                       onClick={handleGoogleSignIn}
-                      className="px-4 py-2.5 bg-zinc-900/40 hover:bg-zinc-900/90 text-zinc-400 hover:text-white border border-zinc-800/80 hover:border-zinc-700 rounded-2xl transition-all cursor-pointer text-xs font-semibold inline-flex items-center gap-1.5 shadow-md"
+                      className="px-4 py-2.5 bg-zinc-950/40 hover:bg-zinc-950/90 text-zinc-400 hover:text-white border border-zinc-900 rounded-2xl transition-all cursor-pointer text-xs font-semibold inline-flex items-center gap-1.5 shadow-md"
                     >
-                      <Database className="w-3.5 h-3.5 text-blue-400" />
-                      App Creator: Access Analytics Console
+                      <Database className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
+                      App Creator: Authenticate Dashboard Database
                     </button>
                   </div>
                 )}
               </motion.div>
-            ) : (
+            )}
+
+            {viewMode === 'builder' && (
+              <motion.div
+                key="builder-view"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.25 }}
+                className="w-full"
+              >
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
+                  {/* Left Side: Configuration Panel */}
+                  <div className="lg:col-span-7 w-full">
+                    <FormBuilder
+                      formConfig={formConfig}
+                      onConfigChange={setFormConfig}
+                      activeTheme={activeTheme}
+                      onThemeChange={setActiveThemeId}
+                    />
+                  </div>
+
+                  {/* Right Side: Interactive Live-Preview Device Frame */}
+                  <div className="lg:col-span-5 w-full lg:sticky lg:top-4 space-y-4">
+                    <div className="text-center">
+                      <span className="text-[10px] font-mono tracking-wider font-bold uppercase text-purple-400">
+                        ⚡ Real-Time Live Preview Frame
+                      </span>
+                    </div>
+
+                    <div className="p-1 rounded-[42px] border-4 border-zinc-800/60 bg-zinc-950/40 shadow-2xl relative">
+                      <FeedbackForm
+                        user={user}
+                        onSignIn={handleGoogleSignIn}
+                        onSubmit={handleFeedbackSubmit}
+                        isSubmitting={isSubmitting}
+                        spreadsheetUrl={null}
+                        formConfig={formConfig}
+                        theme={activeTheme}
+                        isPreviewMode={true}
+                      />
+                    </div>
+                    <p className="text-[10px] text-zinc-500 text-center leading-normal">
+                      Form steps slide in direct synchronicity as edit values change. Try clicking through pages to test interactions!
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {viewMode === 'dashboard' && (
               <motion.div
                 key="dashboard-view"
                 initial={{ opacity: 0, y: 15 }}
@@ -335,7 +429,7 @@ export default function App() {
       </div>
 
       {/* Tiny descriptive safety footer */}
-      <footer className="py-6 border-t border-zinc-900 mt-12 shrink-0 z-10 w-full bg-[#050505]/80 backdrop-blur-sm select-none">
+      <footer className="py-6 border-t border-zinc-900 mt-12 shrink-0 z-10 w-full bg-black/60 backdrop-blur-sm select-none">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-3">
           <div className="text-[10px] text-zinc-500 font-light flex items-center gap-1.5 flex-wrap justify-center">
             <Info className="w-3 h-3 text-zinc-650" />
