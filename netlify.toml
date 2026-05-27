@@ -1,0 +1,24 @@
+# netlify.toml - Deployment configuration for human-designed feedback app on Netlify
+
+[build]
+  # The directory containing the production-ready static assets built by Vite
+  publish = "dist"
+
+  # The command Netlify runs to compile the React/TypeScript app
+  command = "npm run build"
+
+# SPA redirection rules: resolves potential 404s on page reloads/deep links
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Security and cache optimization headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"

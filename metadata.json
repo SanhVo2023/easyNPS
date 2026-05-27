@@ -1,0 +1,6 @@
+{
+  "name": "Google Sheets Feedback Form",
+  "description": "An interactive, mobile-first feedback form styled like Google Gemini that saves responses directly to a Google Sheets spreadsheet.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
